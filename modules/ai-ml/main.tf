@@ -3,7 +3,7 @@ locals {
   search_fqdn     = "${var.name_prefix}-srch.search.windows.net"
 
   # Private endpoints to create when a subnet is supplied.
-  private_endpoints = var.private_endpoint_subnet_id == null ? {} : merge(
+  private_endpoints = !var.private_endpoints_enabled ? {} : merge(
     {
       aml = {
         resource_id = azurerm_machine_learning_workspace.this.id
@@ -50,7 +50,7 @@ resource "azurerm_application_insights" "this" {
 }
 
 resource "azurerm_key_vault" "this" {
-  #checkov:skip=CKV2_AZURE_32:Private endpoint is created by azurerm_private_endpoint.this["keyvault"] when private_endpoint_subnet_id is set
+  #checkov:skip=CKV2_AZURE_32:Private endpoint is created by azurerm_private_endpoint.this["keyvault"] when private_endpoints_enabled is true
   name                          = var.key_vault_name
   resource_group_name           = var.resource_group_name
   location                      = var.location
@@ -74,7 +74,7 @@ resource "azurerm_storage_account" "this" {
   #checkov:skip=CKV2_AZURE_40:Azure ML system datastores require Shared Key access
   #checkov:skip=CKV_AZURE_206:Replication is configurable (storage_replication_type); defaults to zone-redundant ZRS, dev opts into LRS
   #checkov:skip=CKV2_AZURE_1:Platform-managed keys; customer-managed keys are out of scope for this module
-  #checkov:skip=CKV2_AZURE_33:Private endpoints are created by azurerm_private_endpoint.this["blob"/"file"] when private_endpoint_subnet_id is set
+  #checkov:skip=CKV2_AZURE_33:Private endpoints are created by azurerm_private_endpoint.this["blob"/"file"] when private_endpoints_enabled is true
   name                            = var.storage_account_name
   resource_group_name             = var.resource_group_name
   location                        = var.location
@@ -320,7 +320,12 @@ resource "azurerm_private_endpoint" "this" {
 # ---------------------------------------------------------------------------
 check "private_access_reachable" {
   assert {
-    condition     = var.public_network_access_enabled || var.private_endpoint_subnet_id != null
-    error_message = "Public network access is disabled but private_endpoint_subnet_id is not set: the AI/ML endpoints will be unreachable."
+    condition     = var.public_network_access_enabled || var.private_endpoints_enabled
+    error_message = "Public network access is disabled and private endpoints are not enabled: the AI/ML endpoints will be unreachable."
+  }
+
+  assert {
+    condition     = !var.private_endpoints_enabled || var.private_endpoint_subnet_id != null
+    error_message = "private_endpoint_subnet_id is required when private_endpoints_enabled is true."
   }
 }

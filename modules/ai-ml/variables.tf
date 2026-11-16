@@ -38,7 +38,7 @@ variable "log_analytics_workspace_id" {
 }
 
 variable "public_network_access_enabled" {
-  description = "Allow public network access to the AI/ML endpoints. Secure by default (false); set to true only for dev/sandbox, otherwise supply private_endpoint_subnet_id."
+  description = "Allow public network access to the AI/ML endpoints. Secure by default (false); set to true only for dev/sandbox, otherwise enable private_endpoints_enabled."
   type        = bool
   default     = false
 }
@@ -199,8 +199,14 @@ variable "search_partition_count" {
 # ---------------------------------------------------------------------------
 # Private networking
 # ---------------------------------------------------------------------------
+variable "private_endpoints_enabled" {
+  description = "Create private endpoints for AML, Key Vault, storage (blob/file), OpenAI and Search in private_endpoint_subnet_id. A plain bool so it works when the subnet is created in the same apply."
+  type        = bool
+  default     = false
+}
+
 variable "private_endpoint_subnet_id" {
-  description = "Subnet for private endpoints. When null, no private endpoints are created."
+  description = "Subnet for private endpoints (required when private_endpoints_enabled is true)."
   type        = string
   default     = null
 }

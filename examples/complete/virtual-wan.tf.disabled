@@ -1,6 +1,6 @@
 # Azure Virtual WAN (Transit Gateway Equivalent)
 module "virtual_wan" {
-  source = "./modules/virtual-wan"
+  source = "../../modules/virtual-wan"
 
   virtual_wan_name    = "example-${local.current_env.environment}-vwan"
   resource_group_name = module.resource_group.name

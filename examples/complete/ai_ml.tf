@@ -2,7 +2,7 @@
 # Toggle per environment with ai_ml_config.enabled in vars_enviro_dev.tf / var_enviro_prod.tf.
 
 module "ai_ml" {
-  source = "./modules/ai-ml"
+  source = "../../modules/ai-ml"
   count  = local.current_env.ai_ml_config.enabled ? 1 : 0
 
   name_prefix                = "example-${local.current_env.environment}"

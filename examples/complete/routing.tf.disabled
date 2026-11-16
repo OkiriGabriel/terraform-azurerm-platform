@@ -1,6 +1,6 @@
 # Advanced Routing Module with Route Tables and UDRs
 module "routing" {
-  source = "./modules/routing"
+  source = "../../modules/routing"
 
   location            = local.current_env.location
   resource_group_name = module.resource_group.name

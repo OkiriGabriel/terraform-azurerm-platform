@@ -36,8 +36,8 @@ module "postgresql" {
 }
 ```
 
-In this repository the module is wired up in [`database.tf`](../../database.tf). Configure it with `database_config` in
-`vars_enviro_dev.tf` / `var_enviro_prod.tf`. It is **disabled by default** (`enabled = false`).
+In this repository the module is wired up in [`database.tf`](../../examples/complete/database.tf). Configure it with `database_config` in
+`examples/complete/vars_enviro_dev.tf` / `examples/complete/var_enviro_prod.tf`. It is **disabled by default** (`enabled = false`).
 
 ## Dev vs prod defaults in this repo
 

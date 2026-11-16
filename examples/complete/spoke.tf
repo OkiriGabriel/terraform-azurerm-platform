@@ -1,5 +1,5 @@
 module "spoke1" {
-  source                   = "./modules/spoke"
+  source                   = "../../modules/spoke"
   name                     = "example-${local.current_env.environment}-spoke-virtual-network"
   spoke_route_table_name   = "${local.current_env.environment}-spoke-route-table"
   network_security_group   = "${local.current_env.environment}-spoke-network-security-group"

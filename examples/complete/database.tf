@@ -2,7 +2,7 @@
 # Toggle per environment with database_config.enabled in vars_enviro_dev.tf / var_enviro_prod.tf.
 
 module "postgresql" {
-  source = "./modules/postgresql"
+  source = "../../modules/postgresql"
   count  = local.current_env.database_config.enabled ? 1 : 0
 
   name                = "example-${local.current_env.environment}-psql"

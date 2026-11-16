@@ -122,6 +122,7 @@ run "private_endpoints_created" {
 
   variables {
     public_network_access_enabled = false
+    private_endpoints_enabled     = true
     private_endpoint_subnet_id    = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.Network/virtualNetworks/vnet/subnets/pe"
   }
 
@@ -140,6 +141,7 @@ run "secure_by_default" {
   command = plan
 
   variables {
+    private_endpoints_enabled  = true
     private_endpoint_subnet_id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.Network/virtualNetworks/vnet/subnets/pe"
   }
 

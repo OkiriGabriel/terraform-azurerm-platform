@@ -8,7 +8,7 @@ This guide takes you from a fresh subscription to a working AI/ML platform:
 - Azure AI Search for RAG
 
 The infrastructure lives in [`modules/ai-ml`](../modules/ai-ml/README.md) and is wired up in
-[`ai_ml.tf`](../ai_ml.tf).
+[`ai_ml.tf`](../examples/complete/ai_ml.tf).
 
 > **Disabled by default.** `ai_ml_config.enabled = false` in both environments, so a normal
 > `terraform apply` creates nothing new and costs nothing extra. Enable it on purpose using the steps below.
@@ -29,7 +29,7 @@ The infrastructure lives in [`modules/ai-ml`](../modules/ai-ml/README.md) and is
 ### Register resource providers
 
 ```bash
-./automation/register_providers.sh      # includes MachineLearningServices, CognitiveServices, Search
+./automation/register_providers.sh      # run from the repo root; includes MachineLearningServices, CognitiveServices, Search
 # or individually:
 az provider register --namespace Microsoft.MachineLearningServices
 az provider register --namespace Microsoft.CognitiveServices
@@ -40,7 +40,7 @@ az provider register --namespace Microsoft.Search
 
 ## 2. Configure the environment
 
-Edit `ai_ml_config` in `vars_enviro_dev.tf` (dev) or `var_enviro_prod.tf` (prod):
+Edit `ai_ml_config` in `examples/complete/vars_enviro_dev.tf` (dev) or `examples/complete/var_enviro_prod.tf` (prod):
 
 ```hcl
 ai_ml_config = {
@@ -87,6 +87,7 @@ ai_ml_config = {
 ## 3. Deploy
 
 ```bash
+cd examples/complete
 terraform workspace select example-infrastructure-dev
 terraform init
 terraform plan -out=tfplan        # review: about 12-15 new resources for the default dev config
@@ -175,7 +176,7 @@ The cluster scales up for the job and back to zero after `idle_before_scale_in` 
 ## 5. Production hardening checklist
 
 - [ ] `public_network_access_enabled = false`
-- [ ] Set `private_endpoint_subnet_id` to a spoke subnet. For the endpoints to resolve, supply
+- [ ] Set `private_endpoints_enabled = true` and `private_endpoint_subnet_id` to a spoke subnet. For the endpoints to resolve, supply
   `private_dns_zone_ids` for these zones:
   - `privatelink.openai.azure.com`
   - `privatelink.search.windows.net`
