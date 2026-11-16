@@ -1,6 +1,6 @@
 # VNet Peering Module for Multi-Region Connectivity
 module "vnet_peering" {
-  source = "./modules/vnet-peering"
+  source = "../../modules/vnet-peering"
 
   peering_configurations = local.current_env.vnet_peering_config.peering_configurations
 

@@ -53,9 +53,24 @@ jobs:
         id: validate
         run: terraform validate -no-color
 
-      - name: Terraform Plan Smoke Test (mocked providers)
+      - name: Root Module Tests (mocked providers)
         id: test
         run: terraform test -no-color
+
+      - name: Validate & Test Example - complete
+        id: example_complete
+        working-directory: ./examples/complete
+        run: |
+          terraform init -backend=false -input=false
+          terraform validate -no-color
+          terraform test -no-color
+
+      - name: Validate Example - basic
+        id: example_basic
+        working-directory: ./examples/basic
+        run: |
+          terraform init -backend=false -input=false
+          terraform validate -no-color
 
       - name: Comment PR - Format Check
         if: github.event_name == 'pull_request' && steps.fmt.outcome == 'failure' && github.event.pull_request.head.repo.full_name == github.repository
@@ -87,7 +102,8 @@ jobs:
             | 🎨 Format | \`${{ steps.fmt.outcome }}\` |
             | 🔧 Init | \`${{ steps.init.outcome }}\` |
             |  Validate | \`${{ steps.validate.outcome }}\` |
-            | 🧪 Plan smoke test | \`${{ steps.test.outcome }}\` |
+            | 🧪 Module tests | \`${{ steps.test.outcome }}\` |
+            | 📦 Examples | \`${{ steps.example_complete.outcome }}\` / \`${{ steps.example_basic.outcome }}\` |
             
             *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
             
@@ -312,6 +328,8 @@ jobs:
             "MODULES_README.md"
             "IMPLEMENTATION_SUMMARY.md"
             "CONTRIBUTING.md"
+            "examples/basic/README.md"
+            "examples/complete/README.md"
           )
           
           MISSING_DOCS=()

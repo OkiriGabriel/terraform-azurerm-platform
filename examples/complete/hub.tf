@@ -5,7 +5,7 @@ data "azurerm_client_config" "current" {}
 
 module "hub" {
   #  count  = local.current_env.not_deploy ? 0 : 1
-  source                 = "./modules/hub"
+  source                 = "../../modules/hub"
   name                   = "example-${local.current_env.environment}-hub-virtual-network"
   resource_group_name    = module.resource_group.name
   location               = module.resource_group.location

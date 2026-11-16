@@ -1,7 +1,7 @@
 
 
 module "blob_storage" {
-  source = "./modules/blob-storage"
+  source = "../../modules/blob-storage"
 
   resource_group_name = module.resource_group.name
   location            = local.current_env.location

@@ -1,6 +1,6 @@
 # Redis Cache Module
 module "redis" {
-  source              = "./modules/redis"
+  source              = "../../modules/redis"
   tags                = local.current_env.tags
   resource_group_name = module.resource_group.name
   location            = module.resource_group.location

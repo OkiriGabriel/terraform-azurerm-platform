@@ -12,7 +12,7 @@ resource "azurerm_log_analytics_workspace" "main" {
 # Add all necessary RBAC role assignme
 
 module "key_vault" {
-  source = "./modules/keyvault"
+  source = "../../modules/keyvault"
 
   vault_name                  = "example-${local.current_env.environment}-kvt"
   resource_group_name         = module.resource_group.name

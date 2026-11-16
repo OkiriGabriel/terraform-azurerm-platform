@@ -10,7 +10,7 @@ resource "random_password" "acr_password" {
 }
 
 module "acr" {
-  source = "./modules/acr"
+  source = "../../modules/acr"
 
   acrs = {
     main = {

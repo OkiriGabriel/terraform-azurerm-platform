@@ -1,6 +1,6 @@
 # Comprehensive Security Module
 module "security" {
-  source = "./modules/security"
+  source = "../../modules/security"
 
   prefix              = "example-${local.current_env.environment}"
   location            = local.current_env.location

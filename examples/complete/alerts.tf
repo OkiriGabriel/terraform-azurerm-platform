@@ -151,7 +151,7 @@ locals {
 }
 
 module "alerts" {
-  source = "./modules/alerts"
+  source = "../../modules/alerts"
   count  = local.current_env.alert_config.enabled ? 1 : 0
 
   name_prefix         = "example-${local.current_env.environment}"

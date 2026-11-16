@@ -1,5 +1,5 @@
 # module "notification_hub" {
-#   source = "./modules/notification-hub"
+#   source = "../../modules/notification-hub"
 
 #   resource_group_name   = module.resource_group.name
 #   location              = local.current_env.location

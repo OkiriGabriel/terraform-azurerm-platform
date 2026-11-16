@@ -66,8 +66,8 @@ module "ai_ml" {
 }
 ```
 
-In this repository the module is wired up in [`ai_ml.tf`](../../ai_ml.tf) and configured per environment through
-`ai_ml_config` in `vars_enviro_dev.tf` / `var_enviro_prod.tf`. See the
+In this repository the module is wired up in [`ai_ml.tf`](../../examples/complete/ai_ml.tf) and configured per environment through
+`ai_ml_config` in `examples/complete/vars_enviro_dev.tf` / `examples/complete/var_enviro_prod.tf`. See the
 [AI/ML setup guide](../../docs/AI_ML_SETUP.md) for step-by-step instructions.
 
 ## Inputs
@@ -97,7 +97,8 @@ In this repository the module is wired up in [`ai_ml.tf`](../../ai_ml.tf) and co
 | `search_sku` | free, basic, standard, standard2, standard3, storage_optimized_l1/l2 | `string` | `"basic"` |
 | `search_replica_count` | Search replicas (≥2 for read SLA, ≥3 for read/write SLA) | `number` | `1` |
 | `search_partition_count` | Search partitions | `number` | `1` |
-| `private_endpoint_subnet_id` | Subnet for private endpoints; `null` creates none | `string` | `null` |
+| `private_endpoints_enabled` | Create private endpoints (AML, Key Vault, blob, file, OpenAI, Search) | `bool` | `false` |
+| `private_endpoint_subnet_id` | Subnet for private endpoints (required when enabled) | `string` | `null` |
 | `private_dns_zone_ids` | DNS zone IDs keyed by `aml`, `openai`, `search`, `keyvault`, `blob`, `file` | `map(string)` | `{}` |
 
 ## Outputs

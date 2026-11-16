@@ -1,6 +1,6 @@
 # Azure Migrate Module for On-Premises Discovery and Assessment
 module "azure_migrate" {
-  source = "./modules/azure-migrate"
+  source = "../../modules/azure-migrate"
 
   project_name                = "example-${local.current_env.environment}-migrate-project"
   resource_group_name         = module.resource_group.name
@@ -28,7 +28,7 @@ module "azure_migrate" {
 
 # Database Migration Service Module
 module "database_migration" {
-  source = "./modules/database-migration"
+  source = "../../modules/database-migration"
 
   dms_name            = "example-${local.current_env.environment}-dms"
   resource_group_name = module.resource_group.name
@@ -56,7 +56,7 @@ module "database_migration" {
 
 # Azure Site Recovery Module for VM Migration
 module "site_recovery" {
-  source = "./modules/site-recovery"
+  source = "../../modules/site-recovery"
 
   vault_name          = "example-${local.current_env.environment}-rsv"
   resource_group_name = module.resource_group.name

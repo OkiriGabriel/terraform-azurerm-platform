@@ -37,7 +37,7 @@ module "alerts" {
 
 ## Alerts configured in this repository
 
-[`alerts.tf`](../../alerts.tf) builds the alert set automatically from what is deployed. Alerts for features that are
+[`alerts.tf`](../../examples/complete/alerts.tf) builds the alert set automatically from what is deployed. Alerts for features that are
 switched off (database, AI/ML) are left out.
 
 | Alert | Resource | Condition | Severity |
@@ -55,7 +55,7 @@ switched off (database, AI/ML) are left out.
 
 ### Enable it
 
-In `vars_enviro_dev.tf` (or `var_enviro_prod.tf`):
+In `examples/complete/vars_enviro_dev.tf` (or `examples/complete/var_enviro_prod.tf`):
 
 ```hcl
 alert_config = {

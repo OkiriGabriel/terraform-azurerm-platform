@@ -1,6 +1,6 @@
 # Container Apps Module
 module "container_apps_v2" {
-  source              = "./modules/container-apps"
+  source              = "../../modules/container-apps"
   depends_on          = [module.redis, azurerm_key_vault.secrets_vault]
   tags                = local.current_env.tags
   prefix              = "example"

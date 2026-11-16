@@ -1,6 +1,6 @@
 
 # module "bastion" {
-#   source = "./modules/monitoring"
+#   source = "../../modules/monitoring"
 
 #   bastion_name        = "example-${local.current_env.environment}-monitoring"
 #   resource_group_name = module.resource_group.name

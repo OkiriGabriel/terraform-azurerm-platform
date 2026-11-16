@@ -1,6 +1,6 @@
-# Azure Full Infrastructure - Terraform
+# terraform-azurerm-platform
 
-![Release](https://img.shields.io/github/v/tag/OkiriGabriel/terraform-azure-platform?label=release&sort=semver)
+![Release](https://img.shields.io/github/v/tag/OkiriGabriel/terraform-azurerm-platform?label=release&sort=semver)
 ![Terraform](https://img.shields.io/badge/Terraform-1.10.0-623CE4?logo=terraform)
 ![Azure](https://img.shields.io/badge/Azure-Cloud-0078D4?logo=microsoft-azure)
 ![License](https://img.shields.io/badge/License-Proprietary-red)
@@ -8,15 +8,101 @@
 ![AI/ML](https://img.shields.io/badge/AI%2FML-Azure%20ML%20%7C%20OpenAI%20%7C%20AI%20Search-8A2BE2)
 ![CI](https://img.shields.io/badge/CI-fmt%20%7C%20validate%20%7C%20test%20%7C%20tfsec%20%7C%20checkov-blue)
 
-This repository contains enterprise-grade Terraform configuration for Azure infrastructure. It provides:
+Terraform module for an Azure platform. Every capability is opt-in and secure by default:
 
-- a hub-and-spoke network topology with advanced security
-- container orchestration (AKS and Container Apps)
+- a **foundation**: resource group and Log Analytics
 - an **AI/ML platform**: Azure Machine Learning, Azure OpenAI and Azure AI Search
-- on-premises to cloud migration capabilities
+- a private **PostgreSQL** database
+- **monitoring alerts**
+
+The repository also ships 20+ standalone submodules (networking, Container Apps, Redis, Key Vault, migration and
+more) and a complete hub-and-spoke reference deployment.
+
+## 📦 Usage (Terraform Registry)
+
+```hcl
+provider "azurerm" {
+  features {}
+}
+
+module "platform" {
+  source  = "OkiriGabriel/platform/azurerm"
+  version = "~> 3.0"
+
+  name_prefix = "app-dev"
+  location    = "centralus"
+
+  # Everything below is optional and off by default.
+  network = {
+    private_endpoint_subnet_id = azurerm_subnet.private_endpoints.id
+    private_dns_vnet_ids       = { main = azurerm_virtual_network.main.id }
+  }
+
+  postgresql = { enabled = true }
+
+  alerts = {
+    enabled         = true
+    email_receivers = { devops = "devops@example.com" }
+  }
+
+  ai_ml = {
+    enabled                   = true
+    private_endpoints_enabled = true
+    openai_location           = "eastus2"
+    openai_deployments = {
+      gpt-4o-mini = { model_name = "gpt-4o-mini", model_version = "2024-07-18", sku_name = "GlobalStandard" }
+    }
+  }
+}
+```
+
+### Root module inputs
+
+| Name | Description | Default |
+|------|-------------|---------|
+| `name_prefix` | Prefix for all names (2-14 lowercase chars) | **required** |
+| `location` | Azure region | **required** |
+| `name_suffix` | Suffix for globally unique names; `null` generates a random 4-char suffix | `null` |
+| `tags` | Tags for every resource | `{}` |
+| `create_resource_group` / `resource_group_name` | Create a resource group, or deploy into an existing one | `true` / `"<prefix>-rg"` |
+| `log_analytics` | `{ sku, retention_days }` | `PerGB2018`, 30 days |
+| `network` | `{ private_endpoint_subnet_id, private_dns_vnet_ids }` for private endpoints | `{}` |
+| `ai_ml` | Azure ML, OpenAI and AI Search ([options](./modules/ai-ml/README.md)) | disabled |
+| `postgresql` | PostgreSQL Flexible Server ([options](./modules/postgresql/README.md)) | disabled |
+| `alerts` | Email alerts, plus automatic alerts for enabled features ([options](./modules/alerts/README.md)) | disabled |
+
+### Root module outputs
+
+| Name | Description |
+|------|-------------|
+| `resource_group_name`, `resource_group_id` | Resource group |
+| `log_analytics_workspace_id` | Log Analytics workspace |
+| `name_suffix` | Suffix used in global names |
+| `ai_ml` | `{ workspace_name, workspace_id, openai_endpoint, openai_account_id, search_endpoint }` or `null` |
+| `postgresql` | `{ server_id, fqdn, administrator_login, administrator_password_secret_id, database_names }` or `null` |
+| `postgresql_administrator_password` | Generated password (sensitive) |
+| `alerts_action_group_id` | Action group for your own alert rules |
+
+### Submodules
+
+Each folder in [`modules/`](./modules) can be used on its own:
+
+```hcl
+module "redis" {
+  source  = "OkiriGabriel/platform/azurerm//modules/redis"
+  version = "~> 3.0"
+  # ...
+}
+```
+
+### Examples
+
+- [`examples/basic`](./examples/basic): private PostgreSQL plus email alerts in a new VNet (about $15–20/month)
+- [`examples/complete`](./examples/complete): the full hub-and-spoke platform with dev/prod workspaces
 
 ## 📋 Table of Contents
 
+- [Usage (Terraform Registry)](#-usage-terraform-registry)
 - [Architecture Overview](#architecture-overview)
 - [Features](#features)
 - [AI / ML Platform](#-ai--ml-platform)
@@ -158,7 +244,7 @@ It reuses the shared Log Analytics workspace and Container Registry.
 The platform is **disabled by default** so it adds no cost until you opt in. Turn it on per environment:
 
 ```hcl
-# vars_enviro_dev.tf
+# examples/complete/vars_enviro_dev.tf
 ai_ml_config = {
   enabled         = true
   openai_location = "eastus2"   # region with your model quota
@@ -168,7 +254,7 @@ ai_ml_config = {
   openai_deployments = {
     gpt-4o-mini = { model_name = "gpt-4o-mini", model_version = "2024-07-18", sku_name = "GlobalStandard" }
   }
-  # ...see vars_enviro_dev.tf for every option
+  # ...see examples/complete/vars_enviro_dev.tf for every option
 }
 ```
 
@@ -197,7 +283,7 @@ terraform output ai_ml_openai_endpoint
 
 ## 🗄️ Database & Alerting
 
-Both features are **off by default**. Enable them per environment in `vars_enviro_dev.tf` / `var_enviro_prod.tf`.
+Both features are **off by default**. Enable them per environment in `examples/complete/vars_enviro_dev.tf` / `examples/complete/var_enviro_prod.tf`.
 
 **PostgreSQL**: set `database_config.enabled = true`. Dev uses the cheapest Burstable server (about $15/month).
 Prod uses General Purpose with zone-redundant high availability. The server is reachable only through a private
@@ -245,24 +331,20 @@ Ensure you have:
 
 ## 🚀 Quick Start
 
+These steps deploy the complete hub-and-spoke reference platform from [`examples/complete`](./examples/complete).
+To use the module from your own code instead, see [Usage](#-usage-terraform-registry).
+
 ### 1. Clone the Repository
 ```bash
-# Latest stable release (recommended)
-git clone --branch v2.1.0 https://github.com/OkiriGabriel/terraform-azure-platform.git
-cd terraform-azure-platform
-
-# Or the latest development code
-git clone https://github.com/OkiriGabriel/terraform-azure-platform.git
+git clone https://github.com/OkiriGabriel/terraform-azurerm-platform.git
+cd terraform-azurerm-platform/examples/complete
 ```
 
-#### Using a module from another project
-
-Pin a module to a release tag with `?ref=` so upstream changes never reach you unannounced:
+Without the Registry, you can pin a submodule to a release tag with a Git source:
 
 ```hcl
 module "ai_ml" {
-  source = "git::https://github.com/OkiriGabriel/terraform-azure-platform.git//modules/ai-ml?ref=v2.1.0"
-  # ...inputs, see modules/ai-ml/README.md
+  source = "git::https://github.com/OkiriGabriel/terraform-azurerm-platform.git//modules/ai-ml?ref=v3.0.0"
 }
 ```
 
@@ -284,12 +366,12 @@ If using Terraform Cloud:
 # Login to Terraform Cloud
 terraform login
 
-# The configuration is already set in provider.tf
+# The configuration is already set in examples/complete/provider.tf
 ```
 
 ### 4. Register Resource Providers
 ```bash
-./automation/register_providers.sh
+../../automation/register_providers.sh
 ```
 
 ### 5. Initialize Terraform
@@ -311,10 +393,10 @@ terraform workspace new example-infrastructure-dev
 
 ### 7. Review Configuration
 Edit environment-specific configuration:
-- For dev: `vars_enviro_dev.tf`
-- For prod: `var_enviro_prod.tf`
+- For dev: `examples/complete/vars_enviro_dev.tf`
+- For prod: `examples/complete/var_enviro_prod.tf`
 
-See `vars_module_examples.tf` for configuration examples. To enable the AI/ML platform, set
+See `examples/complete/vars_module_examples.tf` for configuration examples. To enable the AI/ML platform, set
 `ai_ml_config.enabled = true` (see [AI / ML Platform](#-ai--ml-platform)).
 
 ### 8. Plan Infrastructure
@@ -337,15 +419,16 @@ az resource list --resource-group example-dev-resource-group --output table
 
 ```text
 .
-├── provider.tf               # Terraform + provider versions, backend
-├── locals.tf                 # Workspace → environment selection
-├── vars_enviro_dev.tf        # Dev environment configuration (local.dev)
-├── var_enviro_prod.tf        # Prod environment configuration (local.prod)
-├── ai_ml.tf                  # AI/ML platform wiring
-├── database.tf               # PostgreSQL wiring
-├── alerts.tf                 # Alert rules built from deployed services
-├── tests/                    # Root plan smoke test (mocked providers)
-├── acr.tf, keyvault.tf, ...  # One root file per capability
+├── main.tf, variables.tf,    # Root module (published to the Terraform Registry)
+│   outputs.tf, versions.tf
+├── tests/                    # Root module tests (mocked providers)
+├── examples/
+│   ├── basic/                # Minimal: PostgreSQL + alerts in a new VNet
+│   └── complete/             # Full hub-and-spoke deployment (dev/prod workspaces)
+│       ├── provider.tf       # Provider + backend
+│       ├── vars_enviro_*.tf  # Per-environment configuration
+│       ├── ai_ml.tf, database.tf, alerts.tf, acr.tf, ...
+│       └── tests/            # Plan smoke test
 ├── modules/
 │   └── <module>/
 │       ├── main.tf           # Resources
@@ -448,10 +531,11 @@ Every pull request automatically runs:
 
 ```bash
 terraform fmt -recursive
-terraform init -backend=false && terraform validate
+terraform init -backend=false && terraform validate && terraform test      # root module
 for m in modules/*/; do (cd "$m" && terraform init -backend=false -input=false >/dev/null && terraform validate); done
-terraform test                                         # root plan smoke test
 for m in ai-ml postgresql alerts; do (cd modules/$m && terraform test); done
+(cd examples/complete && terraform init -backend=false && terraform validate && terraform test)
+(cd examples/basic && terraform init -backend=false && terraform validate)
 tflint --recursive
 tfsec . --config-file .tfsec.yml
 ```
@@ -622,21 +706,21 @@ Common issues and solutions:
 ## 📊 Environment Configuration
 
 ### Development Environment
-File: `vars_enviro_dev.tf`
+File: `examples/complete/vars_enviro_dev.tf`
 - Lower-cost SKUs
 - Single-instance deployments
 - Basic monitoring
 - Non-production workloads
 
 ### Production Environment
-File: `var_enviro_prod.tf`
+File: `examples/complete/var_enviro_prod.tf`
 - Production-grade SKUs
 - High availability
 - Advanced monitoring
 - Multi-region support
 
 ### Configuration Examples
-See `vars_module_examples.tf` for detailed configuration examples.
+See `examples/complete/vars_module_examples.tf` for detailed configuration examples.
 
 ## 📈 Monitoring and Observability
 
@@ -671,14 +755,14 @@ Review costs in Azure Cost Management + Billing.
 - [Modules Documentation](./MODULES_README.md) - Detailed module documentation
 - [Implementation Summary](./IMPLEMENTATION_SUMMARY.md) - Implementation details
 - [Contributing Guide](./CONTRIBUTING.md) - How to contribute
-- [Configuration Examples](./vars_module_examples.tf) - Example configurations
+- [Configuration Examples](./examples/complete/vars_module_examples.tf) - Example configurations
 
 ## 🆘 Support
 
 ### Getting Help
 
-- **Issues**: [GitHub Issues](https://github.com/OkiriGabriel/terraform-azure-platform/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/OkiriGabriel/terraform-azure-platform/discussions)
+- **Issues**: [GitHub Issues](https://github.com/OkiriGabriel/terraform-azurerm-platform/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/OkiriGabriel/terraform-azurerm-platform/discussions)
 - **Email**: thedavidoyebanji@gmail.com
 
 ### Resources
@@ -708,5 +792,5 @@ Maintained by the DevOps Team
 ---
 
 **Last Updated**: November 2026  
-**Version**: [v2.1.0](https://github.com/OkiriGabriel/terraform-azure-platform/releases/tag/v2.1.0)  
+**Version**: [v3.0.0](https://github.com/OkiriGabriel/terraform-azurerm-platform/releases/tag/v3.0.0)  
 **Status**: Production Ready
