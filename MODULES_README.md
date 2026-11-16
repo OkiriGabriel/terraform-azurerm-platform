@@ -13,6 +13,8 @@ This document provides an overview of the new infrastructure modules added to su
 7. [Database Migration Module](#database-migration-module)
 8. [Site Recovery Module](#site-recovery-module)
 9. [AI / ML Module](#ai--ml-module)
+10. [PostgreSQL Module](#postgresql-module)
+11. [Alerts Module](#alerts-module)
 
 ## AKS Module
 
@@ -415,3 +417,39 @@ Configure with `ai_ml_config` in `vars_enviro_dev.tf` / `var_enviro_prod.tf`. It
 (`enabled = false`).
 
 See the [module README](./modules/ai-ml/README.md) and the [setup guide](./docs/AI_ML_SETUP.md).
+
+## PostgreSQL Module
+
+### Overview
+Azure Database for PostgreSQL Flexible Server. It is private by default (private endpoint and private DNS zone)
+and stores its generated admin password in Key Vault.
+
+### Location
+`./modules/postgresql/`
+
+### Key Features
+- **Low-cost default**: `B_Standard_B1ms` Burstable SKU, which can scale to General Purpose or Memory Optimized
+- **Security**: No public access by default, Entra ID authentication, Key Vault-stored password, diagnostics to Log Analytics
+- **Resilience**: Optional zone-redundant HA, geo-redundant backups, 7-35 day retention
+- **Guardrails**: Check blocks catch HA on Burstable SKUs and unreachable configurations
+- **Testing**: `terraform test` suite with mocked providers
+
+See the [module README](./modules/postgresql/README.md).
+
+## Alerts Module
+
+### Overview
+Azure Monitor alerting: an action group (email and webhooks), map-driven metric alerts and a Service Health
+alert.
+
+### Location
+`./modules/alerts/`
+
+### Key Features
+- **Receivers**: Email plus optional Teams/Slack webhooks
+- **Metric alerts**: Any metric on any resource, with dimension filters (e.g. OpenAI HTTP 429s)
+- **Service Health**: Incidents, maintenance and security advisories (free)
+- **Root wiring**: `alerts.tf` builds the alert set from deployed services
+- **Testing**: `terraform test` suite with mocked providers
+
+See the [module README](./modules/alerts/README.md).

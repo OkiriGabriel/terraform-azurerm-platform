@@ -162,11 +162,9 @@ resource "azurerm_security_center_contact" "main" {
   alerts_to_admins    = true
 }
 
-# Security Center Auto Provisioning
-resource "azurerm_security_center_auto_provisioning" "main" {
-  count          = var.enable_security_center ? 1 : 0
-  auto_provision = "On"
-}
+# Note: azurerm_security_center_auto_provisioning was removed. It managed the retired Log Analytics
+# (MMA) agent and is deprecated in azurerm 4.x / removed in v5. Defender for Servers now uses agentless
+# scanning and Azure Monitor Agent instead.
 
 # Azure Private DNS Zones for Private Endpoints
 resource "azurerm_private_dns_zone" "main" {
@@ -231,9 +229,8 @@ resource "azurerm_monitor_diagnostic_setting" "firewall" {
     category = "AzureFirewallDnsProxy"
   }
 
-  metric {
+  enabled_metric {
     category = "AllMetrics"
-    enabled  = true
   }
 }
 

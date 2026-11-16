@@ -13,6 +13,7 @@ resource "azurerm_key_vault" "secrets_vault" {
   enabled_for_template_deployment = true
   purge_protection_enabled        = false
   soft_delete_retention_days      = 7
+  rbac_authorization_enabled      = false # uses access policies; explicit value is required from azurerm v5
 
   # Include access policy for the container's managed identity
   # access_policy {

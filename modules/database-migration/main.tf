@@ -117,9 +117,8 @@ resource "azurerm_monitor_diagnostic_setting" "dms" {
     category = "DatabaseMigrationServiceEvent"
   }
 
-  metric {
+  enabled_metric {
     category = "AllMetrics"
-    enabled  = true
   }
 }
 

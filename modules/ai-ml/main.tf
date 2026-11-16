@@ -56,7 +56,7 @@ resource "azurerm_key_vault" "this" {
   location                      = var.location
   tenant_id                     = var.tenant_id
   sku_name                      = "standard"
-  enable_rbac_authorization     = true
+  rbac_authorization_enabled    = true
   purge_protection_enabled      = true
   soft_delete_retention_days    = 7
   public_network_access_enabled = var.public_network_access_enabled
@@ -266,7 +266,7 @@ resource "azurerm_monitor_diagnostic_setting" "openai" {
     category_group = "allLogs"
   }
 
-  metric {
+  enabled_metric {
     category = "AllMetrics"
   }
 }
@@ -282,7 +282,7 @@ resource "azurerm_monitor_diagnostic_setting" "search" {
     category_group = "allLogs"
   }
 
-  metric {
+  enabled_metric {
     category = "AllMetrics"
   }
 }

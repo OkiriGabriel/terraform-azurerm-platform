@@ -320,7 +320,7 @@ terraform apply
 **Status**: 🎉 Setup Complete - Ready for Deployment!  
 **Last Updated**: June 2026  
 **Terraform Version**: >= 1.10.0  
-**Provider Version**: azurerm ~> 4.18.0
+**Provider Version**: azurerm ~> 4.81
 
 **Thank you for using this infrastructure template!**
 

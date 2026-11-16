@@ -18,7 +18,6 @@ Azure Firewall, NSGs, DDoS protection and Defender for Cloud settings.
 - `azurerm_private_dns_zone`
 - `azurerm_private_dns_zone_virtual_network_link`
 - `azurerm_public_ip`
-- `azurerm_security_center_auto_provisioning`
 - `azurerm_security_center_contact`
 - `azurerm_security_center_subscription_pricing`
 

@@ -50,6 +50,8 @@ This repository contains enterprise-grade Terraform configuration for Azure infr
 - **Storage**: Blob storage with CDN integration
 - **Notification Hub**: Push notifications
 - **Monitoring**: Log Analytics, Application Insights
+- **PostgreSQL Flexible Server**: Private, Key Vault-backed managed database (optional)
+- **Alerting**: Email/webhook alerts for Redis, Key Vault, Container Apps, PostgreSQL, OpenAI and Azure Service Health (optional)
 
 ### AI / ML Infrastructure
 - **Azure Machine Learning**: Workspace, model registry, pipelines and managed endpoints
@@ -111,6 +113,20 @@ This repository contains enterprise-grade Terraform configuration for Azure infr
 -  Azure Site Recovery
 -  Backup and recovery policies
 -  Replication health monitoring
+
+### Database
+-  PostgreSQL Flexible Server (versions 13-17), Burstable to Memory Optimized SKUs
+-  Private endpoint + private DNS zone linked to hub and spoke VNets
+-  Generated admin password stored in Key Vault; Entra ID authentication
+-  Optional zone-redundant HA, geo-redundant backups, 7-35 day retention
+-  Databases and server parameters as code
+-  Per-environment feature flag (`database_config.enabled`)
+
+### Alerting
+-  Action group with email and Teams/Slack webhook receivers
+-  Metric alerts built automatically from deployed services (Redis, Key Vault, Container Apps, PostgreSQL, OpenAI)
+-  Azure Service Health alerts (outages, maintenance, security advisories)
+-  Per-environment feature flag (`alert_config.enabled`), about $0.10 per alert rule per month
 
 ### Automation & Monitoring
 -  GitHub Actions CI/CD pipeline
@@ -178,6 +194,34 @@ terraform output ai_ml_openai_endpoint
 - submitting training jobs
 - RAG setup
 - production hardening, costs and troubleshooting
+
+## 🗄️ Database & Alerting
+
+Both features are **off by default**. Enable them per environment in `vars_enviro_dev.tf` / `var_enviro_prod.tf`.
+
+**PostgreSQL**: set `database_config.enabled = true`. Dev uses the cheapest Burstable server (about $15/month).
+Prod uses General Purpose with zone-redundant high availability. The server is reachable only through a private
+endpoint in the spoke. The admin password is generated and stored in the platform Key Vault.
+See [modules/postgresql](./modules/postgresql/README.md).
+
+```bash
+terraform output postgresql_fqdn
+az keyvault secret show --vault-name example-dev-kvt --name example-dev-psql-admin-password --query value -o tsv
+```
+
+**Alerts**: add your email and set `alert_config.enabled = true`:
+
+```hcl
+alert_config = {
+  enabled                  = true
+  email_receivers          = { devops = "you@yourdomain.com" }
+  service_health_enabled   = true
+  service_health_locations = []
+}
+```
+
+The alert set is built from what's deployed. Database and OpenAI alerts appear only when those features are on.
+See [modules/alerts](./modules/alerts/README.md) for the full list.
 
 ## 📦 Prerequisites
 
@@ -298,6 +342,9 @@ az resource list --resource-group example-dev-resource-group --output table
 ├── vars_enviro_dev.tf        # Dev environment configuration (local.dev)
 ├── var_enviro_prod.tf        # Prod environment configuration (local.prod)
 ├── ai_ml.tf                  # AI/ML platform wiring
+├── database.tf               # PostgreSQL wiring
+├── alerts.tf                 # Alert rules built from deployed services
+├── tests/                    # Root plan smoke test (mocked providers)
 ├── acr.tf, keyvault.tf, ...  # One root file per capability
 ├── modules/
 │   └── <module>/
@@ -333,7 +380,9 @@ az resource list --resource-group example-dev-resource-group --output table
 | **acr** | Container Registry | [README](./modules/acr/README.md) |
 | **keyvault** | Key Vault | [README](./modules/keyvault/README.md) |
 | **redis** | Redis Cache | [README](./modules/redis/README.md) |
-| **ai-ml** 🆕 | Azure ML, OpenAI, AI Search | [README](./modules/ai-ml/README.md) |
+| **ai-ml** | Azure ML, OpenAI, AI Search | [README](./modules/ai-ml/README.md) |
+| **postgresql** 🆕 | PostgreSQL Flexible Server | [README](./modules/postgresql/README.md) |
+| **alerts** 🆕 | Action group, metric & Service Health alerts | [README](./modules/alerts/README.md) |
 | **blob-storage** | Blob storage + CDN | [README](./modules/blob-storage/README.md) |
 | **monitoring** | Prometheus, Grafana, Loki | [README](./modules/monitoring/README.md) |
 | **notification-hub** | Push notifications | [README](./modules/notification-hub/README.md) |
@@ -348,7 +397,7 @@ Every module follows the same layout and rules, and CI enforces them:
 | Standard | Rule |
 |----------|------|
 | **File layout** | `main.tf`, `variables.tf`, `outputs.tf`, `versions.tf`, `README.md`. No outputs inside `main.tf` |
-| **Version pinning** | Each module declares `required_version >= 1.10.0` and `azurerm ~> 4.18` in `versions.tf`, so it validates on its own |
+| **Version pinning** | Each module declares `required_version >= 1.10.0` and `azurerm ~> 4.81` in `versions.tf`, so it validates on its own. Code must be free of provider deprecation warnings |
 | **Formatting** | `terraform fmt -recursive` (CI fails on unformatted code) |
 | **Naming** | `<prefix>-<env>-<service>` (e.g. `example-dev-mlw`). Storage and ACR names are alphanumeric only (`exampledevmlsa`) |
 | **Inputs** | Every variable has a `description` and `type`. Constrained values get a `validation` block |
@@ -369,6 +418,8 @@ Every pull request automatically runs:
    - Format checking (`terraform fmt`). **Fails the build** if code is unformatted
    - Initialization (`terraform init`)
    - Validation (`terraform validate`) for the dev and prod workspaces
+   - **Plan smoke test** (`terraform test` at the root): plans the whole configuration with mocked providers, catching
+     wiring errors and invalid names before `apply`
 
 2. **Security Scanning**
    - **TFSec**: Terraform security scanner
@@ -399,7 +450,8 @@ Every pull request automatically runs:
 terraform fmt -recursive
 terraform init -backend=false && terraform validate
 for m in modules/*/; do (cd "$m" && terraform init -backend=false -input=false >/dev/null && terraform validate); done
-(cd modules/ai-ml && terraform test)
+terraform test                                         # root plan smoke test
+for m in ai-ml postgresql alerts; do (cd modules/$m && terraform test); done
 tflint --recursive
 tfsec . --config-file .tfsec.yml
 ```
@@ -526,6 +578,23 @@ Include:
    - Update examples
    - Document breaking changes
 
+### Provider upgrades (azurerm)
+
+The configuration targets **azurerm `~> 4.81`** and produces no deprecation warnings. That is a prerequisite for
+moving to azurerm v5. A dry run against v5 leaves only two changes that can't be made on 4.x, because the
+v5 syntax doesn't exist there:
+
+| File | v4 syntax (current) | v5 syntax |
+|------|---------------------|-----------|
+| `modules/acr/main.tf` | `georeplications { regional_endpoint_enabled = ... }` (optional) | `global_endpoint_routing_enabled` (required) |
+| `modules/spoke/main.tf` | `service_endpoints = ["Microsoft.KeyVault"]` | `service_endpoint { service = "Microsoft.KeyVault" }` |
+
+To upgrade:
+
+1. Make these two edits.
+2. Change `~> 4.81` to `~> 5.0` in `provider.tf` and every `modules/*/versions.tf`.
+3. Run `terraform init -upgrade`, then `terraform plan`, and review the plan before applying.
+
 ### Troubleshooting
 
 Common issues and solutions:
@@ -597,6 +666,8 @@ Review costs in Azure Cost Management + Billing.
 
 - [AI / ML Setup Guide](./docs/AI_ML_SETUP.md) - Enable and use Azure ML, OpenAI and AI Search
 - [AI / ML Module](./modules/ai-ml/README.md) - Module inputs, outputs and role assignments
+- [PostgreSQL Module](./modules/postgresql/README.md) - Database configuration and connecting
+- [Alerts Module](./modules/alerts/README.md) - Alert rules and notification setup
 - [Modules Documentation](./MODULES_README.md) - Detailed module documentation
 - [Implementation Summary](./IMPLEMENTATION_SUMMARY.md) - Implementation details
 - [Contributing Guide](./CONTRIBUTING.md) - How to contribute

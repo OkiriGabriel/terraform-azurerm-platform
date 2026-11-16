@@ -104,6 +104,7 @@ resource "azurerm_key_vault" "vault" {
   enabled_for_template_deployment = true
   purge_protection_enabled        = true
   soft_delete_retention_days      = 90
+  rbac_authorization_enabled      = false # uses access policies; explicit value is required from azurerm v5
 
   # Include access policy inline
   access_policy {
@@ -186,8 +187,7 @@ resource "azurerm_monitor_diagnostic_setting" "key_vault" {
     category = "AuditEvent"
   }
 
-  metric {
+  enabled_metric {
     category = "AllMetrics"
-    enabled  = true
   }
 }

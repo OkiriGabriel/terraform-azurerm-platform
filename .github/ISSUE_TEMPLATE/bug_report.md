@@ -13,7 +13,7 @@ assignees: ''
 <!-- Please complete the following information -->
 
 - **Terraform Version**: <!-- e.g., 1.10.0 -->
-- **AzureRM Provider Version**: <!-- e.g., 4.18.0 -->
+- **AzureRM Provider Version**: <!-- e.g., 4.81.0 -->
 - **Azure CLI Version**: <!-- Run: az --version -->
 - **Operating System**: <!-- e.g., macOS 13.0, Ubuntu 22.04, Windows 11 -->
 - **Workspace**: <!-- e.g., example-infrastructure-dev -->

@@ -59,19 +59,20 @@ locals {
       }
     }
 
+    # PostgreSQL Flexible Server (modules/postgresql). Disabled by default to avoid cost.
+    # B_Standard_B1ms is the cheapest tier (~$15/month + storage). High availability needs a GP_ SKU.
     database_config = {
+      enabled                      = false
       admin_username               = "psqladmin"
-      sku_name                     = "GP_Standard_D2s_v3" # Updated for flexible server (burstable tier)
-      storage_mb                   = 32768                # Increased for flexible server (32GB)
-      version                      = "14"
-      aci_subnet_start_ip          = "10.1.6.0"
-      aci_subnet_end_ip            = "10.1.6.255"
-      high_availability_enabled    = true
+      version                      = "16"
+      sku_name                     = "B_Standard_B1ms"
+      storage_mb                   = 32768
       auto_grow_enabled            = true
-      geo_redundant_backup_enabled = true
       backup_retention_days        = 7
-      subresource_names            = ["postgresqlServer"]
-      private_dns_zone_name        = "privatelink.postgres.database.azure.com"
+      geo_redundant_backup_enabled = false
+      high_availability_mode       = null
+      databases                    = ["app"]
+      server_configurations        = {}
     }
 
     log_analytics_config = {
@@ -169,6 +170,17 @@ locals {
       search_partition_count = 1
     }
 
+    # Monitoring alerts (modules/alerts). Add at least one email, then set enabled = true.
+    # Cost: ~$0.10 per metric alert rule per month; Service Health alerts and emails are free.
+    alert_config = {
+      enabled = false
+      email_receivers = {
+        # devops = "devops@example.com"
+      }
+      service_health_enabled   = true
+      service_health_locations = [] # empty = all regions
+    }
+
     tags = {
       Environment  = "Development"
       Project      = "example"
@@ -252,7 +264,7 @@ locals {
         marketplace_acr_password_secret_name = "marketplace-acr-password"
         marketplace_min_replicas             = 1
         marketplace_max_replicas             = 1
-        marketplace                          = "examplemarketplacestorage"
+        marketplace                          = "examplemktplacestorage" # max 24 chars
       }
 
       # Admin Frontend configuration

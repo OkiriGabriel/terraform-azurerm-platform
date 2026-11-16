@@ -198,6 +198,34 @@ locals {
       search_partition_count = 1
     }
 
+    # PostgreSQL Flexible Server (modules/postgresql). Enable when the production database is needed.
+    database_config = {
+      enabled                      = false
+      admin_username               = "psqladmin"
+      version                      = "16"
+      sku_name                     = "GP_Standard_D2ds_v5"
+      storage_mb                   = 131072
+      auto_grow_enabled            = true
+      backup_retention_days        = 35
+      geo_redundant_backup_enabled = true
+      high_availability_mode       = "ZoneRedundant"
+      databases                    = ["app"]
+      server_configurations = {
+        log_min_duration_statement = "1000" # log queries slower than 1s
+      }
+    }
+
+    # Monitoring alerts (modules/alerts). Add at least one email, then set enabled = true.
+    # Cost: ~$0.10 per metric alert rule per month; Service Health alerts and emails are free.
+    alert_config = {
+      enabled = false
+      email_receivers = {
+        # devops = "devops@example.com"
+      }
+      service_health_enabled   = true
+      service_health_locations = [] # empty = all regions
+    }
+
     tags = {
       Environment  = "Production"
       Project      = "example"
@@ -278,7 +306,7 @@ locals {
         backend_acr_password_secret_name = "backend-acr-password"
         backend_min_replicas             = 1
         backend_max_replicas             = 3
-        backend                          = "examplebackendstorageprod"
+        backend                          = "examplebackendstprod" # max 24 chars
         # Shaed configuration
         container_volume_name = "containervolumesapp"
       }

@@ -135,7 +135,7 @@ resource "azurerm_recovery_services_vault" "migrate" {
   location            = var.location
   resource_group_name = var.resource_group_name
   sku                 = "Standard"
-  soft_delete_enabled = true
+  # Soft delete is always on for Recovery Services vaults (soft_delete_enabled was removed in azurerm v5).
 
   tags = var.tags
 }

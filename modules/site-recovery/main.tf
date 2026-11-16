@@ -247,9 +247,8 @@ resource "azurerm_monitor_diagnostic_setting" "vault" {
     category = "AzureSiteRecoveryProtectedDiskDataChurn"
   }
 
-  metric {
+  enabled_metric {
     category = "Health"
-    enabled  = true
   }
 }
 

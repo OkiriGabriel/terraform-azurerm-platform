@@ -301,7 +301,7 @@ Azure-full-infrastructure/
 
 ## Version Information
 - **Terraform Version**: >= 1.10.0
-- **AzureRM Provider**: ~> 4.18.0
+- **AzureRM Provider**: ~> 4.81
 - **Implementation Date**: June 2026
 - **Author**: DevOps Team
 
